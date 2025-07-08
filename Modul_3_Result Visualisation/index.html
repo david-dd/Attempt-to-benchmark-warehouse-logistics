@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Simulation</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #grid { display: grid; gap: 0px; margin-bottom: 10px; }
+        .cell { width: 30px; height: 30px; border: 1px solid #ccc; text-align: center; line-height: 30px; position: relative; background-color: #ffffff;}
+        .picker { width: 100%; height: 100%; border-radius: 50%; color: white; font-size: 14px; text-align: center; line-height: 30px; position: absolute; top: 0; left: 0; }
+        .slot img, 
+        .path img { 
+            width: 100%; 
+            height: 100%; 
+        }
+
+        .slot::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7); /* Weiße Fläche mit 70% Deckkraft */
+            z-index: 1; /* Über das Hintergrundbild, aber unter allen anderen Inhalten */
+            pointer-events: none; /* Interaktionen nicht blockieren */
+        }
+
+
+        .product {            
+            z-index: 10; /* Über allem (Slots, Hintergrundbilder, weiße Überlagerung) */
+        }
+
+        .arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            z-index: 10 !important;
+        }
+
+        .arrow-left {
+            border-width: 5px 10px 5px 0;
+            border-color: transparent #e1e1e1 transparent transparent;
+
+            
+            left: 0px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .arrow-right {
+            border-width: 5px 0 5px 10px;
+            border-color: transparent transparent transparent #e1e1e1;
+            right: 0px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .arrow-up {
+            border-width: 0 5px 10px 5px;
+            border-color: transparent transparent #e1e1e1 transparent;
+            
+            top: 0px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .arrow-down {
+            border-width: 10px 5px 0 5px;
+            border-color: #e1e1e1 transparent transparent transparent;
+            bottom: 0px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+
+        /* Fileupload*/
+
+
+        .custom-file-upload {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #4caf50;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    width: 40px; /* Gleiche Größe wie die anderen Buttons */
+    height: 40px; /* Gleiche Größe wie die anderen Buttons */
+    padding: 0; /* Keine zusätzlichen Innenabstände */
+    border: none;
+}
+
+.custom-file-upload:hover {
+    background: #388e3c;
+}
+
+/* SVG-Farben und Größen */
+.custom-file-upload svg {
+    fill: white; /* Farbe des Icons */
+    width: 20px; /* Passende Größe zum Button */
+    height: 20px; /* Passende Größe zum Button */
+    transition: fill 0.3s ease;
+}
+
+.custom-file-upload:hover svg {
+    fill: #ffffff; /* Farbe des Icons bei Hover */
+}
+
+
+
+        /* Allgemeines Styling für die Steuerung */
+#controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+}
+
+/* Buttons für Start/Pause */
+.control-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.control-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Datei-Upload Button */
+/* Grid-Container, der die restliche Höhe einnimmt */
+#grid-container {
+    border-radius: 10px;
+    padding: 10px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Falls Inhalte oben beginnen sollen */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    max-width: 90%;
+    height: calc(100vh - 140px); /* Gesamthöhe minus der Player-Controls */
+    overflow: auto; /* Ermöglicht Scrollen */
+    scrollbar-width: thin; /* Schmale Scrollbar für Firefox */
+    scrollbar-color: #4caf50 #d9d9d9; /* Farbe für Firefox */
+}
+
+/* Schicke Scrollbars für Webkit (Chrome, Edge, Safari) */
+#grid-container::-webkit-scrollbar {
+    width: 10px; /* Breite der Scrollbar */
+    height: 10px; /* Höhe der Scrollbar (bei horizontalem Scrollen) */
+}
+
+#grid-container::-webkit-scrollbar-thumb {
+    background: #4caf50; /* Farbe des Scrollbalkens */
+    border-radius: 10px; /* Abgerundete Ecken */
+}
+
+#grid-container::-webkit-scrollbar-track {
+    background: #d9d9d9; /* Hintergrund der Scrollbar */
+}
+
+
+/* Steuerungselemente fix am unteren Bildschirmrand */
+#player-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f4f4f4;
+    padding: 10px 15px;
+    border-radius: 10px 10px 0 0; /* Abgerundete Ecken oben */
+    font-family: Arial, sans-serif;
+    color: #4caf50;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); /* Schatten nach oben */
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 100; /* Über anderen Elementen */
+}
+
+/* Buttons */
+button, .custom-file-upload {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #4caf50;
+    color: white;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+button:hover, .custom-file-upload:hover {
+    background: #388e3c;
+}
+
+
+/* Fortschrittsbalken */
+.timeline-slider {
+    flex-grow: 1;
+    margin: 0 10px;
+    height: 5px;
+    background: #d9d9d9;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.timeline-slider::-webkit-slider-thumb {
+    background: #4caf50;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Geschwindigkeit */
+.speed-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 16px;
+    color: #4caf50;
+}
+
+#speedControl {
+    width: 100px;
+    height: 5px;
+    background: #d9d9d9;
+    border-radius: 5px;
+}
+
+#speedControl::-webkit-slider-thumb {
+    background: #4caf50;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Step- und Geschwindigkeitsanzeige */
+#stepCount, #speedValue {
+    font-size: 16px;
+    width: 40px;
+    text-align: center;
+    padding-right: 25px;
+}
+
+
+/*  RANGE-Slieder  */ 
+
+/* Slider-Track (Hintergrund) */
+input[type="range"] {
+    -webkit-appearance: none; /* Entfernt Standard-Styling */
+    height: 8px;
+    background: #4caf50; /* Grüner Hintergrund */
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+/* Hover- und Fokus-Effekte für den Slider */
+input[type="range"]:hover {
+    background: #388e3c; /* Dunkleres Grün beim Hover */
+}
+
+/* Slider-Daumen */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    background: #ffffff; /* Weißer Daumen */
+    border-radius: 50%;
+    border: 2px solid #4caf50; /* Grüner Rand */
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+/* Daumen-Hover-Effekt */
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #e8f5e9; /* Hellgrün beim Hover */
+    transform: scale(1.2); /* Vergrößerung beim Hover */
+}
+
+/* Firefox spezifisch */
+input[type="range"]::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    background: #ffffff;
+    border-radius: 50%;
+    border: 2px solid #4caf50;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+input[type="range"]::-moz-range-progress {
+    background: #4caf50; /* Fortschritt in Grün */
+}
+
+input[type="range"]::-moz-range-track {
+    background: #d9d9d9; /* Hintergrund des nicht-bewegten Bereichs */
+    border-radius: 5px;
+}
+
+/* Internet Explorer spezifisch */
+input[type="range"]::-ms-thumb {
+    width: 15px;
+    height: 15px;
+    background: #ffffff;
+    border-radius: 50%;
+    border: 2px solid #4caf50;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+input[type="range"]::-ms-track {
+    background: #d9d9d9;
+    border-radius: 5px;
+    border-color: transparent;
+    color: transparent;
+}
+
+
+
+
+
+
+    </style>
+</head>
+<body>
+
+
+<!-- Eingefasstes Grid -->
+<div id="grid-container">
+    <div id="grid"></div>
+</div>
+
+<!-- Steuerungselemente (jetzt unten wie bei einem Media-Player) -->
+<div id="player-controls">
+    <label for="fileInput" class="custom-file-upload">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24px" height="24px">
+            <path d="M10 4L12 6H20C21.1 6 22 6.9 22 8V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18L2.01 6C2.01 4.9 2.9 4 4 4H10ZM4 18H20V8H4V18Z"/>
+        </svg>
+    </label>
+    <input type="file" id="fileInput" hidden>
+
+
+
+    
+    <button id="startAnimation">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24px" height="24px">
+            <polygon points="8,5 19,12 8,19"></polygon>
+        </svg>
+    </button>
+    <button id="pauseAnimation">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24px" height="24px">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+        </svg>
+    </button>
+
+
+
+
+    <input type="range" id="slider" min="0" value="0" class="timeline-slider">
+    <span id="stepCount">0</span>
+
+
+
+
+    <label class="speed-label">
+        <span>
+
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#4caf50" width="24px" height="24px">
+                    <polygon points="4,4 12,12 4,20"></polygon>
+                    <polygon points="12,4 20,12 12,20"></polygon>
+                </svg>
+
+        </span>
+        <input type="range" id="speedControl" min="1" max="100" value="50">
+    </label>
+    <span id="speedValue">50 ms</span>
+</div>
+
+<canvas id="captureCanvas" width="800" height="600"></canvas>
+
+
+<script>
+let simulationData = {};
+let currentStep = 0;
+
+// Farben für die Picker gemäß deiner Liste
+const pickerColors = [
+    "#0095fa",  // Blau
+    "#369b00",  // Grün
+    "#f99b1c",  // Orange
+    "#c20000",  // Rot
+    "#00bcd4",  // Cyan
+    "#7fff00",  // Chartreuse-Grün
+    "#ffd700",  // Gold                
+    "#ff69b4",  // Pink
+    "#8b4513",  // Braun
+    "#4b0082"   // Indigo
+];
+
+
+let animationInterval = null;
+let speed = 50; // Standard-Geschwindigkeit (10ms pro Frame)
+let isAnimating = false;
+let mediaRecorder;
+let recordedChunks = [];
+
+
+// Funktion zum Starten der Animation
+function startAnimation() {
+    if (!isAnimating) {
+        isAnimating = true;
+        animationInterval = setInterval(() => {
+            if (currentStep < simulationData.history.length - 1) {
+                updateGrid(++currentStep);
+                document.getElementById("slider").value = currentStep;
+            } else {
+                clearInterval(animationInterval);
+                isAnimating = false;
+            }
+        }, speed);
+    }
+}
+
+// Start-Button
+document.getElementById("startAnimation").addEventListener("click", startAnimation);
+
+// Pause-Button
+document.getElementById("pauseAnimation").addEventListener("click", () => {
+    clearInterval(animationInterval);
+    isAnimating = false;
+});
+
+// Aktualisiere den angezeigten Geschwindigkeitswert
+document.getElementById("speedControl").addEventListener("input", (event) => {
+    speed = parseInt(event.target.value);
+    document.getElementById("speedValue").innerText = `${speed} ms`;
+
+    if (isAnimating) {
+        clearInterval(animationInterval);
+        isAnimating = false;
+        startAnimation(); // Neustart mit neuer Geschwindigkeit
+    }
+});
+
+
+
+// Dateiupload für JSON
+document.getElementById("fileInput").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        console.error("⚠️ Keine Datei ausgewählt.");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            simulationData = JSON.parse(e.target.result);
+
+            if (!simulationData.grid || !Array.isArray(simulationData.grid) || simulationData.grid.length === 0) {
+                console.error("⚠️ Fehler: Das Grid fehlt oder ist leer.");
+                alert("Die geladene Datei enthält kein gültiges Grid!");
+                return;
+            }
+
+            if (!simulationData.history || !Array.isArray(simulationData.history) || simulationData.history.length === 0) {
+                console.error("⚠️ Fehler: Die History ist leer oder ungültig.");
+                alert("Die geladene Datei enthält keine gültige Simulation!");
+                return;
+            }
+
+            setupGrid();
+            updateGrid(0);
+            console.log("Ende");
+            document.getElementById('slider').max = simulationData.history.length - 1;
+        } catch (error) {
+            console.error("⚠️ Fehler beim Parsen der JSON-Datei:", error);
+            alert("Ungültiges JSON-Format! Überprüfe die Datei.");
+        }
+    };
+    reader.readAsText(file);
+});
+
+
+// Erstellt das Grid basierend auf der JSON-Datei
+function setupGrid() {
+    const grid = document.getElementById("grid");
+
+    // Prüfe, ob das Grid in der JSON-Datei existiert
+    if (!simulationData.grid || simulationData.grid.length === 0) {
+        console.error("Fehler: Das Grid fehlt oder ist leer.");
+        return;
+    }
+
+    let rows = simulationData.grid.length;
+    let cols = simulationData.grid[0].length;
+
+    grid.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+    grid.innerHTML = "";
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            let cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.id = `cell-${row}-${col}`;
+            renderCell(cell, simulationData.grid[row][col]);  // Nutzt deinen bestehenden Code
+            grid.appendChild(cell);
+        }
+    }
+}
+
+
+
+
+
+// Aktualisiert das Grid basierend auf dem aktuellen Schritt
+function updateGrid(step) {
+    currentStep = step;
+    document.getElementById("stepCount").innerText = `Step: ${step}`;
+
+    // Entferne vorherige Picker-Icons und Produkte
+    document.querySelectorAll(".picker").forEach(el => el.remove());
+    document.querySelectorAll(".product").forEach(el => el.remove());
+
+    let rows = simulationData.grid.length;
+    let cols = simulationData.grid[0].length;
+
+    // Picker-Positionen rendern
+    simulationData.history[step].pickers.forEach(picker => {
+        const pickerId = picker.id;
+        const [row, col] = picker.pos;
+
+        if (row < 0 || col < 0 || row >= rows || col >= cols) {
+            console.warn(`⚠️ Picker ${pickerId} außerhalb des Rasters (${row}, ${col}) - Ignoriert.`);
+            return;
+        }
+
+        let targetCell = document.getElementById(`cell-${row}-${col}`);
+        if (!targetCell) {
+            console.warn(`⚠️ Zelle für Picker ${pickerId} nicht gefunden: (${row}, ${col})`);
+            return;
+        }
+
+        if (currentStep== 0){
+            renderCell(targetCell, 'D', picker.id); // Übergibt die Picker-ID
+        }
+
+
+
+        let pickerDiv = document.createElement("div");
+        pickerDiv.classList.add("picker");
+        pickerDiv.innerText = pickerId;
+        const pickerColor = pickerColors[pickerId % pickerColors.length]; // Farbe des Pickers
+        const rgbaColor = convertHexToRgba(pickerColor, 0.7); // 50% Transparenz
+        pickerDiv.style.backgroundColor = rgbaColor;
+        targetCell.appendChild(pickerDiv);
+
+    // Produkte rendern
+    picker.orders.forEach((product, index) => {
+            const [prodRow, prodCol] = product;
+
+            if (prodRow < 0 || prodCol < 0 || prodRow >= rows || prodCol >= cols) {
+                console.warn(`⚠️ Produkt außerhalb des Rasters (${prodRow}, ${prodCol}) - Ignoriert.`);
+                return;
+            }
+
+            const productCell = document.getElementById(`cell-${prodRow}-${prodCol}`);
+            if (!productCell) {
+                console.warn(`⚠️ Zelle für Produkt nicht gefunden: (${prodRow}, ${prodCol})`);
+                return;
+            }
+
+            // Anzahl der Picker bestimmt die Größe und Position
+            const numPickers = simulationData.history[step].pickers.length;
+            const size = 80 / numPickers; // Dynamische Größe in Prozent
+            const offset = (pickerId - Math.floor(numPickers / 2)) * size * 0.01 * 30; // Positionierungsversatz (basierend auf Zellgröße)
+
+            // Erstelle das Produkt-Element
+            const productDiv = document.createElement("div");
+            productDiv.classList.add("product");
+            productDiv.style.backgroundColor = pickerColors[pickerId % pickerColors.length];
+            productDiv.style.width = `${size}%`;
+            productDiv.style.height = `${size}%`;
+
+            // Berechnung der Position mit Offset
+            productDiv.style.position = "absolute";
+            productDiv.style.left = `calc(50% + ${offset}px)`;
+            productDiv.style.top = "50%";
+            productDiv.style.transform = "translate(-50%, -50%)";
+
+            productCell.appendChild(productDiv);
+        });
+
+
+    });
+
+
+}
+
+// Hilfsfunktion: Hex-Farbe in RGBA konvertieren
+function convertHexToRgba(hex, alpha) {
+    const hexCode = hex.replace('#', '');
+    const r = parseInt(hexCode.substring(0, 2), 16);
+    const g = parseInt(hexCode.substring(2, 4), 16);
+    const b = parseInt(hexCode.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function renderCell(cell, value, pickerId=null) {
+    cell.className = 'cell';
+    cell.innerHTML = '';
+
+    if (value === 'SH') {
+        // Lagerfläche
+        cell.classList.add('slot');
+        const img = document.createElement('img');
+        img.src = 'Pallet_SH.png';
+        img.alt = 'Lagerfläche';
+        cell.appendChild(img);
+    } else if (value === 'SV') {
+        // Ablagestation
+        cell.classList.add('slot');
+        const img = document.createElement('img');
+        img.src = 'Pallet_SV.png';
+        img.alt = 'Ablagestation';
+        cell.appendChild(img);
+    } else {
+        // Pfeile (Hoch, Runter, Links, Rechts)
+        if (value.includes('L')) {
+            const arrowLeft = document.createElement('div');
+            arrowLeft.className = 'arrow arrow-left';
+            cell.appendChild(arrowLeft);
+        }
+        if (value.includes('R')) {
+            const arrowRight = document.createElement('div');
+            arrowRight.className = 'arrow arrow-right';
+            cell.appendChild(arrowRight);
+        }
+        if (value.includes('O')) {
+            const arrowUp = document.createElement('div');
+            arrowUp.className = 'arrow arrow-up';            
+            cell.appendChild(arrowUp);
+        }
+        if (value.includes('U')) {
+            const arrowDown = document.createElement('div');
+            arrowDown.className = 'arrow arrow-down';
+            cell.appendChild(arrowDown);
+        }
+
+        // Pfad-Markierung für die Picker
+        if (value.includes('D')) {
+            cell.classList.add('path');
+        
+            // Dynamische Hintergrundfarbe für die Picker-Ablagestationen
+            if (pickerId !== null) {
+                const pickerColor = pickerColors[pickerId % pickerColors.length]; // Farbe des Pickers
+                const rgbaColor = convertHexToRgba(pickerColor, 0.3); // 50% Transparenz
+                cell.style.backgroundColor = rgbaColor; // Anwenden der transparenten Farbe
+            }
+
+        const img = document.createElement('img');
+        img.src = 'StaplerKlein.png';
+        img.alt = 'Picker';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        cell.appendChild(img);
+        }
+
+        // Falls es sich um ein Produkt handelt, markieren
+        if (value.includes('P')) {
+            cell.style.backgroundColor = 'orange';
+            cell.innerText = '📦';
+        }
+    }
+}
+
+
+
+// Event-Listener für den Slider
+document.getElementById("slider").addEventListener("input", (event) => {
+    updateGrid(event.target.value);
+});
+
+// Zeichnet die Zelle basierend auf deinem existierenden Code
+
+
+</script>
+
+</body>
+</html>

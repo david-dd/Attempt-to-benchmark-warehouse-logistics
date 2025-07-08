@@ -1,0 +1,13 @@
+Example reference data records can be found under:
+https://zenodo.org/records/15828553/files/ReferenceData.zip?download=1
+Please copy the contents from the “Dataset” folder into this directory.
+
+
+
+However, it is also possible to create your own benchmark for a layout defined by you.
+- To do this, create a layout within the web interface using module 1. 
+- Finally, export the layout and save it in the "_layouts" directory. 
+- Edit the file: "gen_EvalDataset.py"
+- Enter the name of your layout in the variable "Warehouse_Architectures".
+- Define how many products a picker should collect per episode (using "min_orders" and "max_orders"). 
+- Execute the file "gen_EvalDataset.py". Usually 1000 episodes are created.

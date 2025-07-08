@@ -29,7 +29,6 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 
-
 def startMulti():
 
     myConfig = envConfiguration()
@@ -62,35 +61,20 @@ def startMulti():
 
 
     Warehouse_Architectures=[
-       # "Heik_Traditional_1",
-        "Heik_Traditional_2",
-        "Heik_Traditional_3",
-        "Heik_Fisebone",
-        "Heik_Flying-V",
-        "Heik_Inverted-V",
+        "Heik_Traditional_1",
+        #"Heik_Traditional_2",
+        #"Heik_Traditional_3",
+        #"Heik_Fisebone",
+        #"Heik_Flying-V",
+        #"Heik_Inverted-V",
     ]
 
     for Warehouse_Architecture in Warehouse_Architectures:
 
 
         Eval_Folder = "Dataset/" + Warehouse_Architecture + "/" + DS_Name + "/"
+       
 
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="warehouse_config.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="warehouse_config_fish1.json")
-        
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Fisebone.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Fisebone_Ext.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Traditional_1.json") # s_path_start=(19, 1))
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Traditional_2.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Traditional_3.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Inverted-V.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Flying-V.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_small.json") #  s_path_start=(7, 1)
-        
-        
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders)
-        
-        #coordinator = PickerCoordinator(env)
 
         env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/"+Warehouse_Architecture+".json")
         
@@ -134,8 +118,6 @@ def startMulti():
 
                 #initial_order, state, done = env.getInit()
                 #availableActionSpace = env.get_valid_actions_one_hot()
-
-
 
 
                 if export_img:            

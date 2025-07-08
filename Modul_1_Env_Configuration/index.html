@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Designer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #ffffff;
+            color: #333333;
+        }
+
+        #top-controls {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #f4f4f4;
+            border-bottom: 1px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #top-controls button, #top-controls input {
+            margin: 0 5px;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #ffffff;
+            color: #333333;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        #top-controls button:hover {
+            background-color: #369b00;
+            color: #ffffff;
+        }
+
+        #top-controls input {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #toolbar {
+            width: 70px;
+            background-color: #f9f9f9;
+            border-right: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #toolbar button {
+            margin-bottom: 10px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #ffffff;
+            color: #333333;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        #toolbar button:hover {
+            background-color: #369b00;
+            color: #ffffff;
+        }
+
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        #canvas {
+            background-color: #ffffff;
+            border: 2px solid #333333;
+            display: grid;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell {
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            position: relative;
+            width: 40px;
+            height: 40px;
+            user-select: none;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .cell:hover {
+            background-color: #FFFFAA;
+        }
+
+        .cell.selected {
+            border: 1px dashed red; /* Markiert kopierte Zellen */
+        }
+
+        .arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            z-index: 10 !important;
+        }
+
+        .arrow-left {
+            border-width: 5px 10px 5px 0;
+            border-color: transparent #333333 transparent transparent;
+
+            
+            left: 0px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .arrow-right {
+            border-width: 5px 0 5px 10px;
+            border-color: transparent transparent transparent #333333;
+            right: 0px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .arrow-up {
+            border-width: 0 5px 10px 5px;
+            border-color: transparent transparent #333333 transparent;
+            
+            top: 0px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .arrow-down {
+            border-width: 10px 5px 0 5px;
+            border-color: #333333 transparent transparent transparent;
+            bottom: 0px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .cell.slot {
+            background-color: #fbfbfb;
+            color: #333333;
+            font-weight: bold;
+        }
+
+        .cell.path {
+            background-color: #e9e9e9;
+            color: #333333;
+            font-weight: bold;
+        }
+
+        #delete-tool img {
+            width: 20px;
+            height: 20px;
+            display: block;
+            margin: auto;
+            pointer-events: none; /* Verhindert, dass SVG-Klicks das Verhalten beeinflussen */
+        }
+    </style>
+</head>
+<body>
+    <div id="top-controls">
+        <button id="undo">↶</button>
+        <button id="redo">↷</button>
+        <button id="save">💾</button>
+        <button id="load">📂</button>
+        <label>
+            Width: <input type="number" id="width" value="8" min="1">
+        </label>
+        <label>
+            Height: <input type="number" id="height" value="12" min="1">
+        </label>
+        <button id="set-size">Set size</button>
+    </div>
+    <div style="display: flex; flex: 1;">
+        <div id="toolbar">
+            <button id="Storage-tool" data-tool="SH">
+                <img src="Pallet_SH.png" alt="Storage" style="width: 20px; height: 20px;">
+            </button>
+            <button id="Storage-tool" data-tool="SV">
+                <img src="Pallet_SV.png" alt="Storage" style="width: 20px; height: 20px;">
+            </button>
+            <button data-tool="L">←</button>
+            <button data-tool="R">→</button>
+            <button data-tool="O">↑</button>
+            <button data-tool="U">↓</button>
+
+            
+            <button id="Stapler-tool" data-tool="D">
+                <img src="StaplerKlein.png" alt="Discharge" style="width: 20px; height: 20px;">
+            </button>
+
+            <button id="delete-tool" data-tool="">
+                <img src="trash-delete-bin.svg" alt="Delete" style="width: 20px; height: 20px;">
+            </button>
+
+            <button id="copy-tool" data-tool="copy">📋</button>
+            <button id="paste-tool" data-tool="paste">📥</button>
+
+        </div>
+        <div id="canvas-container">
+            <div id="canvas"></div>
+        </div>
+    </div>
+
+    <script>
+        const toolbar = document.getElementById('toolbar');
+        const canvas = document.getElementById('canvas');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const setSizeButton = document.getElementById('set-size');
+        const undoButton = document.getElementById('undo');
+        const redoButton = document.getElementById('redo');
+        const saveButton = document.getElementById('save');
+        const loadButton = document.getElementById('load');
+
+        let gridData = [];
+        let history = [];
+        let redoStack = [];
+        let selectedTool = null;
+        let isDrawing = false;
+        let clipboard = []; // Speichert die kopierten Rasterzellen
+        let isCopying = false; // Zeigt an, ob das Kopier-Tool aktiv ist
+
+        function initializeGrid(width, height, initialData = null) {
+            canvas.innerHTML = '';
+            canvas.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
+            canvas.style.gridTemplateRows = `repeat(${height}, 1fr)`;
+
+            gridData = initialData || Array.from({ length: height }, () => Array(width).fill(''));
+
+            for (let row = 0; row < height; row++) {
+                for (let col = 0; col < width; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.addEventListener('mousedown', () => startDrawing(row, col, cell));
+                    cell.addEventListener('mouseenter', () => draw(row, col, cell));
+                    renderCell(cell, gridData[row][col]);
+                    canvas.appendChild(cell);
+                }
+            }
+
+            document.addEventListener('contextmenu', (event) => {
+                // Verhindere das Standardverhalten nur, wenn das Ziel innerhalb des Canvas liegt
+                if (canvas.contains(event.target)) {
+                    event.preventDefault();
+                    updateCell(row, col, cell, true); // true für Löschen
+                }
+            });
+
+            document.addEventListener('mousedown', (event) => {
+                // Verhindere das Standardverhalten nur, wenn das Ziel innerhalb des Canvas liegt
+                if (canvas.contains(event.target)) {
+                    event.preventDefault();
+                }
+            });
+            document.addEventListener('mouseup', stopDrawing);
+        }
+
+        function startDrawing(row, col, cell) {
+            isDrawing = true;
+            updateCell(row, col, cell);
+        }
+
+        function draw(row, col, cell) {
+            if (isDrawing) {
+                updateCell(row, col, cell);
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function updateCell(row, col, cell, isDelete = false) {
+            const previousValue = gridData[row][col];
+            let newValue = previousValue;
+
+            if (selectedTool === 'SH') {
+                newValue = 'SH';
+            } else if (selectedTool === 'SV') {
+                newValue = 'SV';
+            } else if (selectedTool === 'D') {
+                console.log("Wir wollen D zeichnen");
+                console.log(previousValue);
+                if (!previousValue.includes('D')) {
+                    newValue = [...new Set([...previousValue, 'D'])].join('');
+                }
+            } else if (['L', 'R', 'O', 'U'].includes(selectedTool)) {
+                if (!previousValue.includes('S')) {
+                    newValue = [...new Set([...previousValue, selectedTool])].join('');
+                }
+            } else if (selectedTool === '' || isDelete) {
+                // Zurücksetzen der Zelle, wenn das Löschen-Tool gewählt wurde
+                newValue = '';
+            } else if (isCopying) {
+                console.log("Wir haben die für das kopieren Zelle ausgewählt");
+                // Kopiermodus: Zelleninhalt zur Zwischenablage hinzufügen
+                if (!clipboard.some(c => c.row === row && c.col === col)) {
+                    clipboard.push({ row, col, value: previousValue });
+                }
+                cell.classList.add('selected'); // Markiert die kopierten Zellen
+                console.log(clipboard);
+                return; // Keine Änderung der aktuellen Zelle
+                
+            } else if (selectedTool === 'paste') {
+                // Einfügemodus: Inhalte aus der Zwischenablage einfügen
+                const offsetRow = row - clipboard[0].row;
+                const offsetCol = col - clipboard[0].col;
+
+                clipboard.forEach(({ row: cRow, col: cCol, value }) => {
+                    const targetRow = cRow + offsetRow;
+                    const targetCol = cCol + offsetCol;
+
+                    if (targetRow >= 0 && targetRow < gridData.length && targetCol >= 0 && targetCol < gridData[0].length) {
+                        gridData[targetRow][targetCol] = value;
+                        const targetCell = canvas.querySelector(`[data-row='${targetRow}'][data-col='${targetCol}']`);
+                        renderCell(targetCell, value);
+                    }
+                });
+
+                return; // Keine weitere Bearbeitung
+            }
+
+
+            if (newValue !== previousValue) {
+                gridData[row][col] = newValue;
+                history.push({ row, col, previousValue, newValue });
+                redoStack = []; // Clear redo stack
+                renderCell(cell, newValue);
+            }
+        }
+
+
+        function renderCell(cell, value) {
+            cell.className = 'cell'; // Zurücksetzen der Klassen
+            cell.innerHTML = ''; // Inhalt der Zelle leeren
+
+            // Behandlung von Slots (S)
+            if (value === 'SH') {
+                cell.classList.add('slot');
+                const img = document.createElement('img');
+                img.src = 'Pallet_SH.png'; // Pfad zum hochgeladenen Bild
+                img.alt = 'SH';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                cell.appendChild(img);
+            } else if (value === 'SV'){
+                cell.classList.add('slot');
+                const img = document.createElement('img');
+                img.src = 'Pallet_SV.png'; // Pfad zum hochgeladenen Bild
+                img.alt = 'SV';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                cell.appendChild(img);
+            } else {
+                // Behandlung von Pfeilen
+                if (value.includes('L')) {
+                    const arrowLeft = document.createElement('div');
+                    arrowLeft.className = 'arrow arrow-left';
+                    cell.appendChild(arrowLeft);
+                }
+                if (value.includes('R')) {
+                    const arrowRight = document.createElement('div');
+                    arrowRight.className = 'arrow arrow-right';
+                    cell.appendChild(arrowRight);
+                }
+                if (value.includes('O')) {
+                    const arrowUp = document.createElement('div');
+                    arrowUp.className = 'arrow arrow-up';
+                    cell.appendChild(arrowUp);
+                }
+                if (value.includes('U')) {
+                    const arrowDown = document.createElement('div');
+                    arrowDown.className = 'arrow arrow-down';
+                    cell.appendChild(arrowDown);
+                }
+
+                // Behandlung von D (Pfad)
+                if (value.includes('D')) {
+                    cell.classList.add('path');
+
+                    const img = document.createElement('img');
+                    img.src = 'StaplerKlein.png'; // Pfad zum hochgeladenen Bild
+                    img.alt = 'D';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    cell.appendChild(img);
+
+                }
+            }
+        }
+
+        function clearSelection() {
+            const selectedCells = document.querySelectorAll('.cell.selected');
+            selectedCells.forEach(cell => {
+                cell.classList.remove('selected'); // Entfernt die Klasse
+            });
+            clipboard = []; // Leert die Zwischenablage
+        }
+
+        toolbar.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const tool = e.target.dataset.tool;
+                selectedTool = tool;
+
+                if (tool === 'copy') {
+                    isCopying = true;
+                    clipboard = []; // Leert die Zwischenablage
+                    console.log("Kopieren ausgewählt");
+                } else if (tool === 'paste') {
+                    isCopying = false; // Kopiermodus beenden
+                } else {
+                    isCopying = false; // Kopiermodus beenden
+                    clearSelection(); // Markierung entfernen, wenn ein anderes Tool gewählt wird
+                }
+            }
+        })
+
+        setSizeButton.addEventListener('click', () => {
+            const width = parseInt(widthInput.value, 10);
+            const height = parseInt(heightInput.value, 10);
+            initializeGrid(width, height);
+        });
+
+        undoButton.addEventListener('click', () => {
+            const lastAction = history.pop();
+            if (lastAction) {
+                const { row, col, previousValue } = lastAction;
+                gridData[row][col] = previousValue;
+                redoStack.push(lastAction);
+                refreshGrid();
+            }
+        });
+
+        redoButton.addEventListener('click', () => {
+            const lastUndone = redoStack.pop();
+            if (lastUndone) {
+                const { row, col, newValue } = lastUndone;
+                gridData[row][col] = newValue;
+                history.push(lastUndone);
+                refreshGrid();
+            }
+        });
+
+        saveButton.addEventListener('click', () => {
+            const fileName = prompt("Dateiname eingeben (z. B. warehouse_data.json):", "warehouse_data.json");
+            if (!fileName) return;
+
+            const data = {
+                gridData,
+                history,
+                redoStack,
+                selectedTool
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", fileName);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        loadButton.addEventListener('click', () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'application/json';
+
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const data = JSON.parse(e.target.result);
+                        gridData = data.gridData;
+
+                        const height = gridData.length;
+                        const width = gridData[0].length;
+                        initializeGrid(width, height, gridData);
+
+                        history = data.history;
+                        redoStack = data.redoStack;
+                        selectedTool = data.selectedTool;
+
+                        refreshGrid();
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            fileInput.click();
+        });
+
+        function refreshGrid() {
+            Array.from(canvas.children).forEach(cell => {
+                const row = cell.dataset.row;
+                const col = cell.dataset.col;
+                renderCell(cell, gridData[row][col]);
+            });
+        }
+
+        // Initialize default grid
+        initializeGrid(8, 12);
+    </script>
+</body>
+</html>

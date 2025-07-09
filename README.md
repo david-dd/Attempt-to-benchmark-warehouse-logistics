@@ -31,7 +31,7 @@ User contributions include layouts (`.json`), scenario definitions (`.pkl`), and
 
 ## 🚀 Getting Started
 
-See the `documation/` and `Appendix.pdf` for setup instructions, installation steps, and examples of use.
+See the eg. [`documation/`](/documation) and `Appendix.pdf` for setup instructions, installation steps, and examples of use.
 
 ## 📄 License
 

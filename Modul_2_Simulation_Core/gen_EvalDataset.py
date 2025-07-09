@@ -9,8 +9,6 @@ from itertools import permutations
 import heapq
 import copy
 
-
-from method_rl_ppo import Agent  # PPO    
 from _config import envConfiguration    
 from _env import *
 from _utilities import *
@@ -31,7 +29,6 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 def startMulti():
 
     myConfig = envConfiguration()
-    myConfig.ppo_sarl_evalMode = False
 
     DS_Name = "DS01"
     min_orders=4
@@ -47,27 +44,17 @@ def startMulti():
 
 
     Warehouse_Architectures=[
-        #"Heik_Traditional_1",
-        "Heik_Traditional_2",
-        "Heik_Traditional_3",
-        "Heik_Fisebone",
-        "Heik_Flying-V",
-        "Heik_Inverted-V",
+        "Heik_Traditional_1",
+        #"Heik_Traditional_2",
+        #"Heik_Traditional_3",
+        #"Heik_Fisebone",
+        #"Heik_Flying-V",
+        #"Heik_Inverted-V",
     ]
 
     for Warehouse_Architecture in Warehouse_Architectures:
 
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="warehouse_config.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="warehouse_config_fish1.json")
-        
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Fisebone.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Fisebone_Ext.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Traditional_1.json") # s_path_start=(19, 1))
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Traditional_2.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Traditional_3.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Inverted-V.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_Flying-V.json")
-        #env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/Heik_small.json") #  s_path_start=(7, 1)
+
 
         env = WarehouseEnv(min_orders=min_orders, max_orders=max_orders, json_file="_layouts/"+Warehouse_Architecture+".json")
         

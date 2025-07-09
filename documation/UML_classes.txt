@@ -1,0 +1,71 @@
+@startuml
+left to right direction
+
+package Modul_1_Env_Configuration {
+    class LayoutDesigner {
+        +gridData
+        +redoStack
+        +selectedTool
+        +initializeGrid()
+        +updateCell()
+        +clearSelection()
+        +saveLayout()
+        +loadLayout()
+    }
+}
+
+package Modul_2_Simulation_Core {
+    class envConfiguration {
+        +ammount_of_eval_episodes
+    }
+
+    class WarehouseEnv {
+        +width 
+        +height 
+        +grid_static 
+        +pickers 
+        +drop_offs
+        +graph
+        +current_orders
+        +parse_json()
+        +reset()
+        +move_pickers()
+        +get_accessible_position() 
+        +load_order()
+        +execute_plan()
+        +export_json()
+    }
+
+    class PickerCoordinator{
+        +env  WarehouseEnv
+        +paths
+        +plan_picker_paths()
+        +find_path()
+    }
+
+    class SShapeCoordinator
+    class ReturnCoordinator
+    class MidPointCoordinator
+    class OptimalRoutingCoordinator
+
+
+}
+
+package "Modul_3_Result Visualisation" {
+    class Visualizer {
+        +simulationData
+        +setupGrid()
+        +updateGrid()
+        +startAnimation()
+    }
+}
+
+LayoutDesigner --> WarehouseEnv : exportiert JSON für
+envConfiguration --> WarehouseEnv
+WarehouseEnv --> PickerCoordinator
+PickerCoordinator <|-- SShapeCoordinator
+PickerCoordinator <|-- ReturnCoordinator
+PickerCoordinator <|-- MidPointCoordinator
+PickerCoordinator <|-- OptimalRoutingCoordinator
+WarehouseEnv --> Visualizer : exportiert JSON für
+@enduml

@@ -31,7 +31,14 @@ User contributions include layouts (`.json`), scenario definitions (`.pkl`), and
 
 ## 🚀 Getting Started
 
-See the eg. [`documation/`](/documation) and [Appendix.pdf](/documation/Appendix.pdf)  for setup instructions, installation steps, and examples of use.
+See e.g. [`documentation/`](/documentation) and [Appendix.pdf](/documentation/Appendix.pdf) for setup instructions, installation steps, and example usage.
+
+**Important:**  
+To keep the repository lightweight, reference data required for full reproducibility is **not included** here. You can download the official evaluation datasets separately via Zenodo:
+
+- DOI: [10.5281/zenodo.15828553](https://doi.org/10.5281/zenodo.15828553)  
+- Direct link: [ReferenceData.zip (Zenodo)](https://zenodo.org/records/15828553/files/ReferenceData.zip?download=1)
+
 
 ## 📄 License
 

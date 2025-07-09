@@ -60,12 +60,12 @@ package "Modul_3_Result Visualisation" {
     }
 }
 
-LayoutDesigner --> WarehouseEnv : exportiert JSON für
+LayoutDesigner --> WarehouseEnv : export JSON for
 envConfiguration --> WarehouseEnv
 WarehouseEnv --> PickerCoordinator
 PickerCoordinator <|-- SShapeCoordinator
 PickerCoordinator <|-- ReturnCoordinator
 PickerCoordinator <|-- MidPointCoordinator
 PickerCoordinator <|-- OptimalRoutingCoordinator
-WarehouseEnv --> Visualizer : exportiert JSON für
+WarehouseEnv --> Visualizer : export JSON for
 @enduml
